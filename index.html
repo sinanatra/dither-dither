@@ -1,57 +1,362 @@
 <!doctype html>
 <html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>dither-dither</title>
+    <script type="module" src="/src/main.js"></script>
+  </head>
 
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>dithering</title>
-  <script type="module" src="/src/main.js"></script>
-</head>
+  <body>
+    <section class="scroll-stage" id="stage">
+      <div class="stage-sticky">
+        <h1 class="bg-title">dither-dither</h1>
+        <div class="media-row">
+          <div class="media" id="mediaLeft">
+            <dither-dither
+              id="ditherLeft"
+              src="./hermannstrasse.mp4"
+              video
+              immediate
+              freeze="false"
+              width="60"
+              threshold-map="./bayer8x8.png"
+            ></dither-dither>
+          </div>
+          <div class="media" id="mediaCenter">
+            <dither-dither
+              id="ditherCenter"
+              src="./hermannstrasse.mp4"
+              video
+              immediate
+              freeze="false"
+              width="60"
+            ></dither-dither>
+          </div>
+          <div class="media" id="mediaRight">
+            <dither-dither
+              id="ditherRight"
+              src="./hermannstrasse.mp4"
+              video
+              immediate
+              freeze="false"
+              width="60"
+              threshold-map="./lines8.png"
+            ></dither-dither>
+          </div>
+        </div>
+      </div>
+    </section>
 
-<body>
-  <h1>dithering</h1>
-  <h2>image</h2>
-  <div>
-    <img src="./hermannstrasse.jpg" />
-    <dither-dither src="./hermannstrasse.jpg"></dither-dither>
-  </div>
-  <h2>video</h2>
-  <div>
-    <video src="./hermannstrasse.mp4" muted autoplay loop></video>
-    <dither-dither src="./hermannstrasse.mp4" video></dither-dither>
-  </div>
-  <h2>Custom color</h2>
-  <div>
-    <dither-dither src="./hermannstrasse.jpg" dark="0,0,255"></dither-dither>
-    <dither-dither src="./hermannstrasse.jpg" light="0,0,255"></dither-dither>
-    <dither-dither src="./hermannstrasse.jpg" dark="255,0,0" light="0,0,255"></dither-dither>
-  </div>
-  <hr>
-  <div>
-    <dither-dither src="./hermannstrasse.mp4" dark="#978893"></dither-dither>
-    <dither-dither src="./hermannstrasse.mp4" light="#978893"></dither-dither>
-    <dither-dither src="./hermannstrasse.mp4" dark="#889a97" light="#978893"></dither-dither>
-  </div>
+    <p class="scroll-hint" id="scrollHint">↓</p>
 
-  <h2>Custom size & object fit</h2>
-  <div>
-    <dither-dither src="./hermannstrasse.jpg" width="150"></dither-dither>
-    <dither-dither src="./hermannstrasse.jpg" height="250"></dither-dither>
-    <dither-dither src="./hermannstrasse.jpg" width="150" height="500" object-fit="contain"></dither-dither>
-    <dither-dither src="./hermannstrasse.jpg" width="150" height="500" object-fit="cover"></dither-dither>
-  </div>
+    <section class="outro">
+      <h1>dither-dither</h1>
 
-  <h2>Custom threshold map</h2>
-  <div>
-    <img src="./hermannstrasse.jpg" />
-    <dither-dither src="./hermannstrasse.jpg" threshold-map="./bayer8x8.png" lazy></dither-dither>
-  </div>
-</body>
-<style>
-  div {
-    display: flex;
-    gap: 10px;
-  }
-</style>
+      <p>
+        This is a web component for monochrome dithering. It works on images and
+        videos. It's based on shaders and should be quite fast. It uses a blue
+        noise threshold map. But you can also specify a custom threshold map.
+      </p>
 
+      <p>
+        It works with small media files – in most cases you'll get away with
+        using images and videos of atrocious quality
+      </p>
+
+      <pre><code>npm i dither-dither</code></pre>
+      <pre><code>import 'dither-dither'</code></pre>
+      <pre><code>&lt;dither-dither src="…"&gt;&lt;/dither-dither&gt;</code></pre>
+
+      <p style="text-align: center; margin-top: 5rem">
+        <a href="https://github.com/fidelthomet/dither-dither"
+          >source on github</a
+        >
+      </p>
+    </section>
+
+    <section class="duo">
+      <div class="duo-grid" id="grid"></div>
+    </section>
+
+    <script type="module">
+      const grid = document.getElementById("grid");
+
+      const FIRST_ROW_SIZE = 6;
+      const TOTAL_IMAGES = (FIRST_ROW_SIZE * (FIRST_ROW_SIZE + 1)) / 2;
+      const GRID_GAP = 4;
+
+      const availableWidth = Math.min(window.innerWidth, 920);
+      const tileSize = Math.floor(
+        Math.min(
+          60,
+          (availableWidth - (FIRST_ROW_SIZE - 1) * GRID_GAP) / FIRST_ROW_SIZE,
+        ),
+      );
+
+      let remaining = TOTAL_IMAGES;
+      let rowSize = FIRST_ROW_SIZE;
+      let i = 0;
+      while (remaining > 0) {
+        const count = Math.min(rowSize, remaining);
+        const row = document.createElement("div");
+        row.className = "duo-row";
+        for (let j = 0; j < count; j++) {
+          const el = document.createElement("dither-dither");
+          el.setAttribute("src", "./hermannstrasse.jpg");
+          el.setAttribute("immediate", "");
+          el.setAttribute("width", tileSize);
+          if (i % 2 === 1) {
+            el.setAttribute("dark", "#fff");
+            el.setAttribute("light", "#000");
+          }
+          row.appendChild(el);
+          i++;
+        }
+        grid.appendChild(row);
+        remaining -= count;
+        rowSize = Math.max(1, rowSize - 1);
+      }
+
+      const PLAIN_UNTIL = 0.2;
+      const DUOTONE_BY = 0.45;
+      const DUOTONE_HOLD_UNTIL = 0.75;
+
+      const ZOOM_ENDS_AT = 1;
+      const START_SIZE = 50;
+      const MAX_WIDTH_SHARE = 0.28;
+      const MAX_HEIGHT_SHARE = 0.5;
+
+      const BLACK = [0, 0, 0];
+      const WHITE = [255, 255, 255];
+
+      const COLUMNS = [
+        { id: "Left", duotoneDark: [90, 20, 60], duotoneLight: [255, 210, 60] },
+        {
+          id: "Center",
+          duotoneDark: [20, 20, 90],
+          duotoneLight: [255, 145, 55],
+        },
+        {
+          id: "Right",
+          duotoneDark: [15, 70, 40],
+          duotoneLight: [220, 80, 210],
+        },
+      ].map((column) => ({
+        ...column,
+        media: document.getElementById(`media${column.id}`),
+        dither: document.getElementById(`dither${column.id}`),
+      }));
+
+      const stage = document.getElementById("stage");
+      const scrollHint = document.getElementById("scrollHint");
+
+      function clamp(value, min, max) {
+        return Math.max(min, Math.min(max, value));
+      }
+
+      function lerp(a, b, t) {
+        return a + (b - a) * t;
+      }
+
+      function lerpColor(a, b, t) {
+        return [0, 1, 2].map((i) => Math.round(lerp(a[i], b[i], t)));
+      }
+
+      function toHex([r, g, b]) {
+        return (
+          "#" +
+          [r, g, b]
+            .map((v) =>
+              clamp(Math.round(v), 0, 255).toString(16).padStart(2, "0"),
+            )
+            .join("")
+        );
+      }
+
+      function sizeAt(progress) {
+        const maxSize = Math.min(
+          window.innerWidth * MAX_WIDTH_SHARE,
+          window.innerHeight * MAX_HEIGHT_SHARE,
+        );
+        const zoomProgress = Math.min(progress / ZOOM_ENDS_AT, 1);
+        return Math.round(lerp(START_SIZE, maxSize, zoomProgress));
+      }
+
+      function colorsAt(progress, column) {
+        if (progress < PLAIN_UNTIL) return [BLACK, WHITE];
+        if (progress < DUOTONE_BY) {
+          const t = (progress - PLAIN_UNTIL) / (DUOTONE_BY - PLAIN_UNTIL);
+          return [
+            lerpColor(BLACK, column.duotoneDark, t),
+            lerpColor(WHITE, column.duotoneLight, t),
+          ];
+        }
+        if (progress < DUOTONE_HOLD_UNTIL) {
+          return [column.duotoneDark, column.duotoneLight];
+        }
+        const t = (progress - DUOTONE_HOLD_UNTIL) / (1 - DUOTONE_HOLD_UNTIL);
+        return [
+          lerpColor(column.duotoneDark, BLACK, t),
+          lerpColor(column.duotoneLight, WHITE, t),
+        ];
+      }
+
+      let ticking = false;
+
+      function update() {
+        ticking = false;
+
+        const rect = stage.getBoundingClientRect();
+        const scrollable = rect.height - window.innerHeight;
+        const progress = clamp(-rect.top / scrollable, 0, 1);
+
+        const size = sizeAt(progress);
+
+        for (const column of COLUMNS) {
+          column.media.style.width = size + "px";
+          column.media.style.height = size + "px";
+
+          column.dither.setAttribute("width", size);
+          column.dither.resizeCanvas();
+          // column.dither.draw();
+
+          const [dark, light] = colorsAt(progress, column);
+          column.dither.setAttribute("dark", toHex(dark));
+          column.dither.setAttribute("light", toHex(light));
+        }
+
+        scrollHint.style.opacity = progress > 0 ? 0 : 1;
+      }
+
+      function onScroll() {
+        if (!ticking) {
+          requestAnimationFrame(update);
+          ticking = true;
+        }
+      }
+
+      window.addEventListener("scroll", onScroll, { passive: true });
+      window.addEventListener("resize", onScroll);
+      update();
+    </script>
+  </body>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      background: #000;
+      color: #fff;
+      text-rendering: optimizeSpeed;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .scroll-stage {
+      position: relative;
+      height: 250vh;
+      top: 0;
+    }
+
+    .stage-sticky {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .bg-title {
+      font-weight: normal;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -58%);
+      margin: 0;
+      font-size: 15vw;
+      white-space: nowrap;
+      z-index: 0;
+    }
+
+    .media-row {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+    }
+
+    .media {
+      position: relative;
+      overflow: hidden;
+    }
+
+    .media dither-dither {
+      position: absolute;
+      inset: 0;
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    .outro {
+      max-width: 620px;
+      margin: 0 auto;
+      line-height: 1.5;
+    }
+
+    .outro pre {
+      background: #111;
+      padding: 0.75rem 1rem;
+      overflow-x: auto;
+    }
+
+    .outro a {
+      color: inherit;
+    }
+
+    .scroll-hint {
+      position: fixed;
+      bottom: 1.5rem;
+      left: 0;
+      right: 0;
+      text-align: center;
+    }
+
+    .duo {
+      max-width: 920px;
+      margin: 0 auto;
+      text-align: center;
+      overflow-x: hidden;
+    }
+
+    .duo p {
+      margin-bottom: 2rem;
+    }
+
+    .duo-grid {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .duo-row {
+      display: flex;
+      justify-content: center;
+      gap: 4px;
+    }
+
+  ::selection {
+      background: #fff;
+      color: #000;
+    }
+  </style>
 </html>
